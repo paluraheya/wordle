@@ -402,7 +402,7 @@ class WordleApp:
             self.keyboard_frame.pack_forget()
         except:
             pass
-        from wordle_main_menu import MainMenu
+        from main import MainMenu
         self.sound.stop_music()
         self.sound.play_menu_music()
         MainMenu(self.root)
