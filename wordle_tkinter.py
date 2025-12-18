@@ -158,7 +158,6 @@ class WordleApp:
 
         self.secret = random.choice(self.words)
         self.wordle = Wordle(self.secret)
-        print(self.secret)
         self.current_guess = ""
         self.revealing = False
 
