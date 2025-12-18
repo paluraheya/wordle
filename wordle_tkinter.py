@@ -163,7 +163,9 @@ class WordleApp:
         self.revealing = False
 
         self.tiles = []
-        self.key_buttons = {}
+        self.key_buttons = {}      
+        # for bubble messages
+        self.bubble_widgets = []
 
 
         self.btn_back_img = tk.PhotoImage(file="images/back.png")
@@ -191,7 +193,7 @@ class WordleApp:
     # grid
     def create_grid(self):
         self.grid_frame = tk.Frame(self.root, bg=self.COLORS["bg"])
-        self.grid_frame.pack(pady=30)
+        self.grid_frame.pack(pady=35)
         for r in range(self.wordle.MAX_ATTEMPTS):
             row = []
             for c in range(self.wordle.WORD_LENGTH):
@@ -340,6 +342,43 @@ class WordleApp:
         popup.bind("<Escape>", lambda e: popup.destroy())
         popup.bind("<Return>", lambda e: popup.destroy())
 
+    # show bubble message
+    def show_bubble_message(self, tile, message, color):
+        # get tile position
+        tile_x = tile.winfo_rootx() - self.root.winfo_rootx()
+        tile_y = tile.winfo_rooty() - self.root.winfo_rooty()
+        tile_width = tile.winfo_width()
+        
+        # create bubble frame
+        bubble_frame = tk.Frame(self.root, bg=color, relief="solid", borderwidth=2)
+        bubble_frame.place(x=tile_x + tile_width//2 - 60, y=tile_y - 30)
+        
+        # create label with message
+        bubble_label = tk.Label(
+            bubble_frame,
+            text=message,
+            font=("Clarendon BT", 10, "bold"),
+            bg=color,
+            fg="white",
+            padx=2,
+            pady=1
+        )
+        bubble_label.pack()
+        
+        # store reference
+        self.bubble_widgets.append(bubble_frame)
+        
+        
+        self.root.after(2000, lambda: self.remove_bubble(bubble_frame))
+    
+    def remove_bubble(self, bubble_frame):
+        try:
+            bubble_frame.destroy()
+            if bubble_frame in self.bubble_widgets:
+                self.bubble_widgets.remove(bubble_frame)
+        except:
+            pass
+
     # reveal
     def _reveal_step(self):
         
@@ -365,22 +404,30 @@ class WordleApp:
         tile_char = letter_state.character
         tile.config(text=tile_char)
 
-        # determine color
+        # determine color and message
         if letter_state.is_in_position:
             color = self.COLORS["green"]
+            message = "Correct spot!"
         elif letter_state.is_in_word:
             color = self.COLORS["yellow"]
+            message = "Wrong spot"
         else:
             color = self.COLORS["dark-grey"]
+            message = None
 
         # color the tile and keyboard key
         def apply_color():
             tile.config(bg=color, fg="white")
             self.update_key_color(tile_char, color)
+            
+            # Show bubble message for green and yellow
+            if message:
+                self.show_bubble_message(tile, message, color)
+            
             self.reveal_index += 1
-            self.root.after(180, self._reveal_step)
+            self.root.after(200, self._reveal_step)
 
-        self.root.after(150, apply_color)
+        self.root.after(180, apply_color)
 
     # keyboard color
     def update_key_color(self, letter, color):
@@ -388,7 +435,7 @@ class WordleApp:
         if not btn:
             return
 
-        # Priority: green > yellow > gray
+        
         current_color = btn.cget("bg")
         priority = {"green": 3, "yellow": 2, "dark-grey": 1, self.COLORS["key_default"]: 0}
         current_rank = priority.get(current_color, 0)
@@ -403,7 +450,7 @@ class WordleApp:
             self.keyboard_frame.pack_forget()
         except:
             pass
-        from wordle_main_menu import MainMenu
+        from main import MainMenu
         self.sound.stop_music()
         self.sound.play_menu_music()
         MainMenu(self.root)
